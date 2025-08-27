@@ -1,0 +1,105 @@
+{
+  "SchemaVersion": 2,
+  "ArtifactName": "golang:1.12-alpine",
+  "ArtifactType": "container_image",
+  "Metadata": {
+    "ImageID": "sha256:b3d6068234f3a0f5b8a0b8b8b8b8b8b8b8b8b8b8b8b8b8b8b8b8b8b8b8b8b8b8",
+    "DiffIDs": [
+      "sha256:c9b1b39a6b6e6b6e6b6e6b6e6b6e6b6e6b6e6b6e6b6e6b6e6b6e6b6e6b6e6b6e"
+    ],
+    "RepoTags": [
+      "golang:1.12-alpine"
+    ],
+    "RepoDigests": [
+      "golang@sha256:a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2"
+    ],
+    "ImageConfig": {
+      "architecture": "amd64",
+      "created": "2023-01-15T10:30:00Z",
+      "os": "linux"
+    }
+  },
+  "Results": [
+    {
+      "Target": "golang:1.12-alpine (alpine 3.10.2)",
+      "Class": "os-pkgs",
+      "Type": "alpine",
+      "Vulnerabilities": [
+        {
+          "VulnerabilityID": "CVE-2023-12345",
+          "PkgName": "openssl",
+          "InstalledVersion": "1.1.1g-r0",
+          "FixedVersion": "1.1.1h-r0",
+          "Layer": {
+            "Digest": "sha256:layer123",
+            "DiffID": "sha256:diff123"
+          },
+          "SeveritySource": "nvd",
+          "PrimaryURL": "https://avd.aquasec.com/nvd/cve-2023-12345",
+          "DataSource": {
+            "ID": "alpine",
+            "Name": "Alpine Secdb",
+            "URL": "https://secdb.alpinelinux.org/"
+          },
+          "Title": "openssl: buffer overflow vulnerability",
+          "Description": "A buffer overflow vulnerability exists in OpenSSL that could allow remote code execution.",
+          "Severity": "HIGH",
+          "CweIDs": [
+            "CWE-120"
+          ],
+          "CVSS": {
+            "nvd": {
+              "V2Vector": "AV:N/AC:L/Au:N/C:P/I:P/A:P",
+              "V3Vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
+              "V2Score": 7.5,
+              "V3Score": 9.8
+            }
+          },
+          "References": [
+            "https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2023-12345",
+            "https://www.openssl.org/news/secadv/20230315.txt"
+          ],
+          "PublishedDate": "2023-03-15T14:30:00Z",
+          "LastModifiedDate": "2023-03-16T09:15:00Z"
+        },
+        {
+          "VulnerabilityID": "CVE-2023-67890",
+          "PkgName": "busybox",
+          "InstalledVersion": "1.30.1-r2",
+          "FixedVersion": "1.30.1-r3",
+          "Layer": {
+            "Digest": "sha256:layer456",
+            "DiffID": "sha256:diff456"
+          },
+          "SeveritySource": "nvd",
+          "PrimaryURL": "https://avd.aquasec.com/nvd/cve-2023-67890",
+          "DataSource": {
+            "ID": "alpine",
+            "Name": "Alpine Secdb",
+            "URL": "https://secdb.alpinelinux.org/"
+          },
+          "Title": "busybox: command injection vulnerability",
+          "Description": "A command injection vulnerability in busybox could allow privilege escalation.",
+          "Severity": "MEDIUM",
+          "CweIDs": [
+            "CWE-78"
+          ],
+          "CVSS": {
+            "nvd": {
+              "V2Vector": "AV:L/AC:L/Au:N/C:P/I:P/A:P",
+              "V3Vector": "CVSS:3.1/AV:L/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H",
+              "V2Score": 4.6,
+              "V3Score": 7.8
+            }
+          },
+          "References": [
+            "https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2023-67890",
+            "https://busybox.net/security.html"
+          ],
+          "PublishedDate": "2023-02-20T11:45:00Z",
+          "LastModifiedDate": "2023-02-21T16:20:00Z"
+        }
+      ]
+    }
+  ]
+}
