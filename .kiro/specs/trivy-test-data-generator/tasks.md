@@ -13,22 +13,22 @@
   - Write unit tests for validation functions with valid and invalid inputs
   - _Requirements: 3.1, 3.2, 3.3_
 
-- [ ] 3. Create randomization engine with field-specific generators
-- [ ] 3.1 Implement basic randomization utilities
+- [x] 3. Create randomization engine with field-specific generators
+- [x] 3.1 Implement basic randomization utilities
   - Create VulnerabilityRandomizer class with Faker integration for realistic data generation
   - Implement CVE ID generation following CVE-YYYY-XXXXX format using Faker date utilities
   - Add package name selection from predefined Linux package list enhanced with Faker word generation
   - Write unit tests for basic randomization functions
   - _Requirements: 4.2, 4.3_
 
-- [ ] 3.2 Implement version and severity randomization
+- [x] 3.2 Implement version and severity randomization
   - Create realistic version string generation using Faker for semantic versioning patterns
   - Implement severity level selection from valid options (CRITICAL, HIGH, MEDIUM, LOW, UNKNOWN)
   - Add CVSS score generation with realistic float values within valid ranges using Faker number utilities
   - Write unit tests for version and severity randomization
   - _Requirements: 4.4, 4.5, 4.6_
 
-- [ ] 3.3 Implement date and root field randomization
+- [x] 3.3 Implement date and root field randomization
   - Create date randomization using Faker for PublishedDate and LastModifiedDate in ISO format
   - Implement ArtifactName and ImageID randomization using Faker for realistic container names and hash generation
   - Add correlation logic between related fields (CVSS scores and severity)
