@@ -31,6 +31,10 @@ pip install -e .
 pip install trivy-test-data-generator
 ```
 
+### Python command line
+```bash
+python -m src.main
+```
 ## Usage
 
 ### Command Line Interface
