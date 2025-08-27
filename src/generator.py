@@ -100,9 +100,15 @@ class TrivyDataGenerator:
         if "Results" in randomized_data:
             for result in randomized_data["Results"]:
                 if "Vulnerabilities" in result and result["Vulnerabilities"]:
-                    result["Vulnerabilities"] = self.randomizer.randomize_vulnerabilities(
+                    # First randomize the count of vulnerabilities
+                    result["Vulnerabilities"] = self.randomizer.randomize_vulnerability_count(
                         result["Vulnerabilities"]
                     )
+                    # Then randomize the content of the remaining vulnerabilities
+                    if result["Vulnerabilities"]:  # Only if we still have vulnerabilities after count randomization
+                        result["Vulnerabilities"] = self.randomizer.randomize_vulnerabilities(
+                            result["Vulnerabilities"]
+                        )
         
         # Validate generated data maintains schema
         if not self.validator.validate_generated_file(randomized_data):

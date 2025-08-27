@@ -325,5 +325,192 @@ class TestVulnerabilityRandomizer(unittest.TestCase):
             self.assertTrue(all(c in '0123456789abcdef' for c in hex_part))
 
 
+    def test_randomize_vulnerability_count_empty_list(self):
+        """Test vulnerability count randomization with empty list."""
+        result = self.randomizer.randomize_vulnerability_count([])
+        self.assertEqual(result, [])
+    
+    def test_randomize_vulnerability_count_zero_target(self):
+        """Test vulnerability count randomization when target is 0."""
+        with patch('random.randint', return_value=0):
+            result = self.randomizer.randomize_vulnerability_count(self.sample_vulnerabilities)
+            self.assertEqual(result, [])
+    
+    def test_randomize_vulnerability_count_subset_selection(self):
+        """Test vulnerability count randomization when reducing count."""
+        # Create multiple vulnerabilities for testing
+        multiple_vulns = [
+            {"VulnerabilityID": f"CVE-2023-{i:05d}", "PkgName": f"pkg{i}"}
+            for i in range(5)
+        ]
+        
+        # Mock random.randint to return 3 (less than original 5)
+        with patch('random.randint', return_value=3):
+            result = self.randomizer.randomize_vulnerability_count(multiple_vulns)
+            
+            self.assertEqual(len(result), 3)
+            # All returned vulnerabilities should be from the original list
+            for vuln in result:
+                self.assertIn(vuln, multiple_vulns)
+    
+    def test_randomize_vulnerability_count_duplication(self):
+        """Test vulnerability count randomization when increasing count."""
+        # Mock random.randint to return 15 (more than original 1)
+        with patch('random.randint', return_value=15):
+            result = self.randomizer.randomize_vulnerability_count(self.sample_vulnerabilities)
+            
+            self.assertEqual(len(result), 15)
+            # Should contain the original vulnerability
+            original_vuln = self.sample_vulnerabilities[0]
+            found_original = False
+            for vuln in result:
+                if vuln["VulnerabilityID"] == original_vuln["VulnerabilityID"]:
+                    found_original = True
+                    break
+            self.assertTrue(found_original)
+    
+    def test_randomize_vulnerability_count_range(self):
+        """Test vulnerability count randomization stays within 0-20 range."""
+        # Test multiple times to ensure range is respected
+        for _ in range(50):
+            result = self.randomizer.randomize_vulnerability_count(self.sample_vulnerabilities)
+            self.assertGreaterEqual(len(result), 0)
+            self.assertLessEqual(len(result), 20)
+    
+    def test_randomize_vulnerability_count_deep_copy(self):
+        """Test that duplicated vulnerabilities are deep copies."""
+        # Mock random.randint to return 3 (more than original 1)
+        with patch('random.randint', return_value=3):
+            result = self.randomizer.randomize_vulnerability_count(self.sample_vulnerabilities)
+            
+            self.assertEqual(len(result), 3)
+            
+            # Modify one of the results
+            result[0]["VulnerabilityID"] = "MODIFIED"
+            
+            # Original should be unchanged
+            self.assertNotEqual(self.sample_vulnerabilities[0]["VulnerabilityID"], "MODIFIED")
+            
+            # Other copies should also be unchanged
+            for i in range(1, len(result)):
+                if result[i]["VulnerabilityID"] == "MODIFIED":
+                    self.fail("Deep copy failed - modifications affected other instances")
+    
+    def test_randomize_vulnerability_count_maintains_structure(self):
+        """Test that vulnerability structure is maintained after count randomization."""
+        complex_vuln = {
+            "VulnerabilityID": "CVE-2023-00001",
+            "PkgName": "test-pkg",
+            "Severity": "HIGH",
+            "CVSS": {
+                "nvd": {
+                    "V2Score": 5.0,
+                    "V3Score": 7.5
+                }
+            },
+            "References": ["http://example.com"],
+            "PublishedDate": "2023-01-01T00:00:00Z"
+        }
+        
+        with patch('random.randint', return_value=5):
+            result = self.randomizer.randomize_vulnerability_count([complex_vuln])
+            
+            self.assertEqual(len(result), 5)
+            
+            # Check that all vulnerabilities maintain the complex structure
+            for vuln in result:
+                self.assertIn("VulnerabilityID", vuln)
+                self.assertIn("PkgName", vuln)
+                self.assertIn("Severity", vuln)
+                self.assertIn("CVSS", vuln)
+                self.assertIn("nvd", vuln["CVSS"])
+                self.assertIn("V2Score", vuln["CVSS"]["nvd"])
+                self.assertIn("V3Score", vuln["CVSS"]["nvd"])
+                self.assertIn("References", vuln)
+                self.assertIn("PublishedDate", vuln)
+    
+    def test_randomize_vulnerability_count_shuffling(self):
+        """Test that duplicated vulnerabilities are shuffled in the result."""
+        # Create multiple distinct vulnerabilities
+        multiple_vulns = [
+            {"VulnerabilityID": "CVE-2023-00001", "PkgName": "pkg1"},
+            {"VulnerabilityID": "CVE-2023-00002", "PkgName": "pkg2"},
+            {"VulnerabilityID": "CVE-2023-00003", "PkgName": "pkg3"}
+        ]
+        
+        # Mock to return 9 (3x original count)
+        with patch('random.randint', return_value=9):
+            # Run multiple times to check for shuffling
+            results = []
+            for _ in range(10):
+                result = self.randomizer.randomize_vulnerability_count(multiple_vulns)
+                # Get the order of vulnerability IDs
+                order = [vuln["VulnerabilityID"] for vuln in result]
+                results.append(tuple(order))
+            
+            # Should have different orderings (very high probability)
+            unique_orders = set(results)
+            self.assertGreater(len(unique_orders), 1, "Results should be shuffled")
+    
+    def test_randomize_vulnerability_count_exact_match(self):
+        """Test vulnerability count randomization when target equals original count."""
+        multiple_vulns = [
+            {"VulnerabilityID": f"CVE-2023-{i:05d}", "PkgName": f"pkg{i}"}
+            for i in range(5)
+        ]
+        
+        # Mock to return same count as original
+        with patch('random.randint', return_value=5):
+            result = self.randomizer.randomize_vulnerability_count(multiple_vulns)
+            
+            self.assertEqual(len(result), 5)
+            # Should be a subset (which happens to be all) of original
+            for vuln in result:
+                self.assertIn(vuln, multiple_vulns)
+    
+    def test_deep_copy_vulnerability_method(self):
+        """Test the _deep_copy_vulnerability helper method."""
+        complex_vuln = {
+            "VulnerabilityID": "CVE-2023-00001",
+            "nested": {
+                "deep": {
+                    "value": [1, 2, 3]
+                }
+            }
+        }
+        
+        copied_vuln = self.randomizer._deep_copy_vulnerability(complex_vuln)
+        
+        # Should be equal but not the same object
+        self.assertEqual(copied_vuln, complex_vuln)
+        self.assertIsNot(copied_vuln, complex_vuln)
+        
+        # Modifying copy should not affect original
+        copied_vuln["VulnerabilityID"] = "MODIFIED"
+        copied_vuln["nested"]["deep"]["value"].append(4)
+        
+        self.assertEqual(complex_vuln["VulnerabilityID"], "CVE-2023-00001")
+        self.assertEqual(complex_vuln["nested"]["deep"]["value"], [1, 2, 3])
+    
+    def test_randomize_vulnerability_count_statistical_distribution(self):
+        """Test that vulnerability count randomization produces expected statistical distribution."""
+        counts = []
+        for _ in range(1000):
+            result = self.randomizer.randomize_vulnerability_count(self.sample_vulnerabilities)
+            counts.append(len(result))
+        
+        # Should have variety in counts
+        unique_counts = set(counts)
+        self.assertGreater(len(unique_counts), 10)  # Should have good variety
+        
+        # All counts should be in valid range
+        self.assertEqual(min(counts), min(counts, key=lambda x: x if x >= 0 else float('inf')))
+        self.assertEqual(max(counts), max(counts, key=lambda x: x if x <= 20 else float('-inf')))
+        
+        # Should include both 0 and 20 in the distribution (with high probability)
+        self.assertIn(0, counts)
+        self.assertIn(20, counts)
+
+
 if __name__ == '__main__':
     unittest.main()

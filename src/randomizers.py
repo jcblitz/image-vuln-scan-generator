@@ -190,6 +190,63 @@ class VulnerabilityRandomizer:
                 if "V3Score" in source_data:
                     source_data["V3Score"] = self._generate_cvss_score("V3", severity)
     
+    def randomize_vulnerability_count(self, vulnerabilities: List[Dict]) -> List[Dict]:
+        """
+        Randomize the number of vulnerabilities (0-20 range).
+        
+        Args:
+            vulnerabilities: Original list of vulnerability objects
+            
+        Returns:
+            List with randomized number of vulnerabilities
+        """
+        if not vulnerabilities:
+            return vulnerabilities
+        
+        # Generate random count between 0 and 20
+        target_count = random.randint(0, 20)
+        
+        if target_count == 0:
+            return []
+        
+        original_count = len(vulnerabilities)
+        
+        if target_count <= original_count:
+            # Select random subset of vulnerabilities (deep copied)
+            selected = random.sample(vulnerabilities, target_count)
+            return [self._deep_copy_vulnerability(vuln) for vuln in selected]
+        else:
+            # Need to duplicate some vulnerabilities to reach target count
+            result = [self._deep_copy_vulnerability(vuln) for vuln in vulnerabilities]
+            
+            # Calculate how many more we need
+            additional_needed = target_count - original_count
+            
+            # Randomly select vulnerabilities to duplicate
+            for _ in range(additional_needed):
+                # Pick a random vulnerability to duplicate
+                vuln_to_duplicate = random.choice(vulnerabilities)
+                # Create a deep copy to avoid reference issues
+                duplicated_vuln = self._deep_copy_vulnerability(vuln_to_duplicate)
+                result.append(duplicated_vuln)
+            
+            # Shuffle the final list to mix original and duplicated entries
+            random.shuffle(result)
+            return result
+    
+    def _deep_copy_vulnerability(self, vulnerability: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Create a deep copy of a vulnerability object.
+        
+        Args:
+            vulnerability: Original vulnerability object
+            
+        Returns:
+            Deep copy of the vulnerability
+        """
+        import copy
+        return copy.deepcopy(vulnerability)
+    
     def _generate_date(self) -> str:
         """Generate random date in ISO format using Faker for PublishedDate and LastModifiedDate."""
         # Generate date within last 5 years using Faker's date utilities

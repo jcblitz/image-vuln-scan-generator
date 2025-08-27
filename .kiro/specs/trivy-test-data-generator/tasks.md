@@ -35,7 +35,7 @@
   - Write unit tests for date and root field randomization
   - _Requirements: 4.1, 4.7_
 
-- [ ] 3.4 Add vulnerability count randomization
+- [x] 3.4 Add vulnerability count randomization
   - Implement randomize_vulnerability_count method to vary the number of vulnerabilities (0-20 range)
   - Add logic to randomly select subset of vulnerabilities or duplicate existing ones
   - Write unit tests for vulnerability count randomization
