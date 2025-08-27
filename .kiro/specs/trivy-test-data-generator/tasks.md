@@ -6,7 +6,7 @@
   - Set up Python package configuration with setup.py and requirements.txt including Faker library
   - _Requirements: 6.1, 6.3_
 
-- [ ] 2. Implement validation module for Trivy JSON schema
+- [x] 2. Implement validation module for Trivy JSON schema
   - Create TrivyValidator class with input file validation methods
   - Implement JSON schema checking for required fields and structure
   - Add validation for generated files to ensure schema preservation
@@ -35,37 +35,43 @@
   - Write unit tests for date and root field randomization
   - _Requirements: 4.1, 4.7_
 
-- [ ] 4. Build core generator with template processing
-- [ ] 4.1 Implement template loading and parsing
+- [ ] 3.4 Add vulnerability count randomization
+  - Implement randomize_vulnerability_count method to vary the number of vulnerabilities (0-20 range)
+  - Add logic to randomly select subset of vulnerabilities or duplicate existing ones
+  - Write unit tests for vulnerability count randomization
+  - _Requirements: 4.8_
+
+- [x] 4. Build core generator with template processing
+- [x] 4.1 Implement template loading and parsing
   - Create TrivyDataGenerator class with initialization and template loading
   - Implement JSON file parsing with error handling for malformed input
   - Add template caching mechanism for performance optimization
   - Write unit tests for template loading with various input scenarios
   - _Requirements: 1.1, 1.2_
 
-- [ ] 4.2 Implement single file generation logic
+- [x] 4.2 Implement single file generation logic
   - Create method to generate one randomized file from template
   - Implement deep copy of template structure to preserve schema
   - Add randomization application to vulnerability arrays and root fields
   - Write unit tests for single file generation with schema validation
   - _Requirements: 1.3, 3.2, 3.3_
 
-- [ ] 4.3 Implement batch file generation and output management
+- [x] 4.3 Implement batch file generation and output management
   - Create method to generate multiple files with configurable count
   - Implement unique filename generation and output directory management
   - Add progress tracking and status reporting for large batch operations
   - Write unit tests for batch generation with various file counts
   - _Requirements: 1.4, 2.1, 2.2_
 
-- [ ] 5. Create command-line interface
-- [ ] 5.1 Implement argument parsing and validation
+- [x] 5. Create command-line interface
+- [x] 5.1 Implement argument parsing and validation
   - Create main CLI entry point with argparse configuration
   - Implement input validation for file paths and generation count parameters
   - Add default value handling and usage instruction display
   - Write unit tests for CLI argument parsing with various input combinations
   - _Requirements: 5.1, 5.2, 2.3_
 
-- [ ] 5.2 Implement CLI orchestration and error handling
+- [x] 5.2 Implement CLI orchestration and error handling
   - Create main execution flow connecting CLI to generator components
   - Implement comprehensive error handling with meaningful error messages
   - Add progress display and completion status reporting
@@ -86,8 +92,8 @@
   - Write performance tests to verify 1,000 file generation under 30 seconds
   - _Requirements: 2.3_
 
-- [ ] 8. Create comprehensive test suite
-- [ ] 8.1 Implement unit tests for all components
+- [x] 8. Create comprehensive test suite
+- [x] 8.1 Implement unit tests for all components
   - Create test fixtures with sample Trivy JSON files
   - Write unit tests for randomizer functions with edge cases
   - Add unit tests for validator methods with various input scenarios

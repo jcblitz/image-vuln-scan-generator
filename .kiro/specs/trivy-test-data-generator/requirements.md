@@ -26,7 +26,7 @@ This project creates a Python-based automated solution that generates randomized
 1. WHEN a user specifies the number of files to generate THEN the system SHALL accept this as a configurable parameter
 2. WHEN the parameter is provided THEN the system SHALL generate exactly that number of unique files
 3. WHEN generating 1,000 files THEN the system SHALL complete the process in under 30 seconds on standard development hardware
-4. WHEN no number is specified THEN the system SHALL use a sensible default value
+4. WHEN no number is specified THEN the system SHALL use a sensible default value (10 files)
 
 ### Requirement 3
 
@@ -52,6 +52,7 @@ This project creates a Python-based automated solution that generates randomized
 5. WHEN assigning severity THEN the system SHALL randomly select from valid severity levels (CRITICAL, HIGH, MEDIUM, LOW, UNKNOWN)
 6. WHEN calculating CVSS scores THEN the system SHALL generate realistic V2Score and V3Score float values within valid ranges
 7. WHEN setting dates THEN the system SHALL randomize PublishedDate and LastModifiedDate with valid datetime strings
+8. WHEN setting the number of Vulnerabilities THEN the system SHALL randomize the number of vulnerabilities present from 0 to 20
 
 ### Requirement 5
 
@@ -63,6 +64,7 @@ This project creates a Python-based automated solution that generates randomized
 2. WHEN executed with minimal parameters THEN the system SHALL provide clear usage instructions
 3. WHEN processing completes THEN the system SHALL display progress and completion status
 4. WHEN errors occur THEN the system SHALL provide meaningful error messages and exit codes
+5. WHEN the script is executed THEN it SHALL support standard CLI patterns (--help, --version flags)
 
 ### Requirement 6
 

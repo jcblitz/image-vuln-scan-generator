@@ -71,7 +71,10 @@ class VulnerabilityRandomizer:
         """Randomize ArtifactName and ImageID"""
     
     def randomize_vulnerabilities(self, vulnerabilities: List[Dict]) -> List[Dict]:
-        """Randomize vulnerability array entries"""
+        """Randomize vulnerability array entries and count"""
+    
+    def randomize_vulnerability_count(self, vulnerabilities: List[Dict]) -> List[Dict]:
+        """Randomize the number of vulnerabilities (0-20)"""
     
     def _generate_cve_id(self) -> str:
         """Generate realistic CVE identifier"""
@@ -164,6 +167,7 @@ Based on typical Trivy output format:
 ### Randomization Targets
 Fields to be randomized while preserving structure:
 - **Root Level**: ArtifactName, Metadata.ImageID
+- **Vulnerability Count**: Number of vulnerabilities in the array (0-20 range)
 - **Vulnerabilities**: VulnerabilityID, PkgName, InstalledVersion, FixedVersion, Severity, CVSS scores, dates
 
 ### Data Sources
@@ -227,6 +231,7 @@ class GenerationError(TrivyGeneratorError):
 - Use cryptographically secure random number generation
 - Ensure realistic data distributions (e.g., more MEDIUM/HIGH than CRITICAL)
 - Maintain correlation between related fields (e.g., CVSS scores and severity)
+- Randomize vulnerability count (0-20) to simulate varying scan results from different environments
 
 ### Performance Optimization
 - Template caching to avoid repeated JSON parsing
