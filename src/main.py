@@ -7,7 +7,9 @@ import sys
 from pathlib import Path
 from typing import Optional
 
+from .exceptions import TrivyGeneratorError, ValidationError, GenerationError, FileOperationError, ConfigurationError
 from .generator import TrivyDataGenerator
+from .logging_config import setup_logging, get_logger, log_exception
 from .validators import TrivyValidator
 
 
@@ -37,57 +39,157 @@ def parse_arguments() -> argparse.Namespace:
         help="Output directory for generated files (default: output)"
     )
     
+    parser.add_argument(
+        "-v", "--verbose",
+        action="store_true",
+        help="Enable verbose logging"
+    )
+    
+    parser.add_argument(
+        "--log-file",
+        type=str,
+        help="Path to log file (optional)"
+    )
+    
+    parser.add_argument(
+        "--debug",
+        action="store_true",
+        help="Enable debug logging"
+    )
+    
     return parser.parse_args()
 
 
-def validate_inputs(args: argparse.Namespace) -> bool:
-    """Validate input parameters."""
+def validate_inputs(args: argparse.Namespace, logger) -> None:
+    """
+    Validate input parameters.
+    
+    Args:
+        args: Parsed command line arguments
+        logger: Logger instance
+        
+    Raises:
+        ConfigurationError: If input parameters are invalid
+    """
+    logger.debug("Validating input parameters")
+    
     input_path = Path(args.input_file)
     
     if not input_path.exists():
-        print(f"Error: Input file '{args.input_file}' does not exist")
-        return False
+        raise ConfigurationError(
+            f"Input file does not exist",
+            parameter="input_file",
+            details=f"Path: {args.input_file}"
+        )
     
     if not input_path.is_file():
-        print(f"Error: '{args.input_file}' is not a file")
-        return False
+        raise ConfigurationError(
+            f"Input path is not a file",
+            parameter="input_file", 
+            details=f"Path: {args.input_file}"
+        )
     
     if args.count <= 0:
-        print("Error: Count must be a positive integer")
-        return False
+        raise ConfigurationError(
+            "Count must be a positive integer",
+            parameter="count",
+            details=f"Provided value: {args.count}"
+        )
     
-    return True
+    if args.count > 10000:
+        logger.warning(f"Large file count requested: {args.count}")
+    
+    logger.debug("Input parameter validation passed")
 
 
 def main() -> int:
     """Main CLI entry point."""
+    logger = None
+    
     try:
         args = parse_arguments()
         
-        if not validate_inputs(args):
-            return 1
+        # Set up logging based on arguments
+        log_level = "DEBUG" if args.debug else ("INFO" if args.verbose else "WARNING")
+        logger = setup_logging(
+            level=log_level,
+            log_file=args.log_file,
+            enable_console=True
+        )
+        
+        logger.info("Starting Trivy Test Data Generator")
+        logger.debug(f"Arguments: input_file={args.input_file}, count={args.count}, output_dir={args.output_dir}")
+        
+        # Validate input parameters
+        validate_inputs(args, logger)
         
         # Validate input file is valid Trivy JSON
+        logger.info("Validating input file")
         validator = TrivyValidator()
-        if not validator.validate_input_file(args.input_file):
-            print(f"Error: '{args.input_file}' is not a valid Trivy JSON file")
-            return 1
+        validator.validate_input_file(args.input_file)
         
         # Initialize generator
+        logger.info("Initializing generator")
         generator = TrivyDataGenerator(args.input_file, args.output_dir)
         
         # Generate files
+        logger.info(f"Generating {args.count} randomized files...")
         print(f"Generating {args.count} randomized files...")
+        
         generated_files = generator.generate_files(args.count)
         
-        print(f"Successfully generated {len(generated_files)} files in '{args.output_dir}'")
+        success_msg = f"Successfully generated {len(generated_files)} files in '{args.output_dir}'"
+        logger.info(success_msg)
+        print(success_msg)
         return 0
         
     except KeyboardInterrupt:
-        print("\nOperation cancelled by user")
+        error_msg = "Operation cancelled by user"
+        if logger:
+            logger.info(error_msg)
+        print(f"\n{error_msg}")
         return 1
+        
+    except ConfigurationError as e:
+        error_msg = f"Configuration error: {e}"
+        if logger:
+            logger.error(error_msg)
+        print(error_msg)
+        return 1
+        
+    except ValidationError as e:
+        error_msg = f"Validation error: {e}"
+        if logger:
+            logger.error(error_msg)
+        print(error_msg)
+        return 1
+        
+    except GenerationError as e:
+        error_msg = f"Generation error: {e}"
+        if logger:
+            logger.error(error_msg)
+        print(error_msg)
+        return 1
+        
+    except FileOperationError as e:
+        error_msg = f"File operation error: {e}"
+        if logger:
+            logger.error(error_msg)
+        print(error_msg)
+        return 1
+        
+    except TrivyGeneratorError as e:
+        error_msg = f"Generator error: {e}"
+        if logger:
+            logger.error(error_msg)
+        print(error_msg)
+        return 1
+        
     except Exception as e:
-        print(f"Error: {e}")
+        error_msg = f"Unexpected error: {e}"
+        if logger:
+            log_exception(logger, e, "main execution")
+        print(error_msg)
         return 1
 
 

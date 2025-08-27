@@ -7,6 +7,7 @@ from datetime import datetime, timedelta
 from typing import Any, Dict, List
 
 from faker import Faker
+from .logging_config import get_logger
 
 
 class VulnerabilityRandomizer:
@@ -15,6 +16,7 @@ class VulnerabilityRandomizer:
     def __init__(self):
         """Initialize randomizer with Faker instance and predefined data."""
         self.fake = Faker()
+        self.logger = get_logger(f"{__name__}.VulnerabilityRandomizer")
         
         # Predefined lists for realistic randomization
         self.package_names = [
@@ -27,6 +29,8 @@ class VulnerabilityRandomizer:
         ]
         
         self.severity_levels = ["CRITICAL", "HIGH", "MEDIUM", "LOW", "UNKNOWN"]
+        
+        self.logger.debug("VulnerabilityRandomizer initialized")
     
     def randomize_root_fields(self, data: Dict[str, Any]) -> Dict[str, Any]:
         """

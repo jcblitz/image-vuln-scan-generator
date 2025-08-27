@@ -6,6 +6,9 @@ import json
 from pathlib import Path
 from typing import Any, Dict
 
+from .exceptions import ValidationError
+from .logging_config import get_logger
+
 
 class TrivyValidator:
     """Handles validation of Trivy JSON files and generated data."""
@@ -14,6 +17,7 @@ class TrivyValidator:
         """Initialize validator."""
         self.required_root_fields = ["SchemaVersion", "ArtifactName", "ArtifactType"]
         self.required_vulnerability_fields = ["VulnerabilityID", "PkgName", "Severity"]
+        self.logger = get_logger(f"{__name__}.TrivyValidator")
     
     def validate_input_file(self, file_path: str) -> bool:
         """
@@ -23,20 +27,66 @@ class TrivyValidator:
             file_path: Path to the input file
             
         Returns:
-            True if valid, False otherwise
+            True if valid
+            
+        Raises:
+            ValidationError: If validation fails
         """
+        self.logger.debug(f"Validating input file: {file_path}")
+        
         try:
             path = Path(file_path)
-            if not path.exists() or not path.is_file():
-                return False
+            if not path.exists():
+                raise ValidationError(
+                    f"Input file does not exist",
+                    file_path=file_path,
+                    details="File path not found on filesystem"
+                )
+            
+            if not path.is_file():
+                raise ValidationError(
+                    f"Input path is not a file",
+                    file_path=file_path,
+                    details="Path exists but is not a regular file"
+                )
             
             with open(file_path, 'r', encoding='utf-8') as f:
                 data = json.load(f)
             
-            return self._check_trivy_structure(data)
+            if not self._check_trivy_structure(data):
+                raise ValidationError(
+                    "File does not have valid Trivy JSON structure",
+                    file_path=file_path,
+                    details="Missing required fields or invalid structure"
+                )
             
-        except (json.JSONDecodeError, IOError, KeyError):
-            return False
+            self.logger.info(f"Successfully validated input file: {file_path}")
+            return True
+            
+        except json.JSONDecodeError as e:
+            self.logger.error(f"JSON decode error in file {file_path}: {e}")
+            raise ValidationError(
+                "File contains invalid JSON",
+                file_path=file_path,
+                details=f"JSON parsing failed: {e}"
+            )
+        except IOError as e:
+            self.logger.error(f"IO error reading file {file_path}: {e}")
+            raise ValidationError(
+                "Failed to read input file",
+                file_path=file_path,
+                details=f"IO error: {e}"
+            )
+        except ValidationError:
+            # Re-raise ValidationError as-is
+            raise
+        except Exception as e:
+            self.logger.error(f"Unexpected error validating file {file_path}: {e}")
+            raise ValidationError(
+                "Unexpected error during validation",
+                file_path=file_path,
+                details=f"Unexpected error: {e}"
+            )
     
     def validate_generated_file(self, data: Dict[str, Any]) -> bool:
         """
@@ -46,12 +96,38 @@ class TrivyValidator:
             data: Generated JSON data as dictionary
             
         Returns:
-            True if valid, False otherwise
+            True if valid
+            
+        Raises:
+            ValidationError: If validation fails
         """
+        self.logger.debug("Validating generated file data")
+        
         try:
-            return self._check_trivy_structure(data)
-        except (KeyError, TypeError):
-            return False
+            if not self._check_trivy_structure(data):
+                raise ValidationError(
+                    "Generated data does not have valid Trivy JSON structure",
+                    details="Missing required fields or invalid structure in generated data"
+                )
+            
+            self.logger.debug("Generated file data validation successful")
+            return True
+            
+        except (KeyError, TypeError) as e:
+            self.logger.error(f"Structure error in generated data: {e}")
+            raise ValidationError(
+                "Generated data has invalid structure",
+                details=f"Structure validation failed: {e}"
+            )
+        except ValidationError:
+            # Re-raise ValidationError as-is
+            raise
+        except Exception as e:
+            self.logger.error(f"Unexpected error validating generated data: {e}")
+            raise ValidationError(
+                "Unexpected error during generated data validation",
+                details=f"Unexpected error: {e}"
+            )
     
     def _check_trivy_structure(self, data: Dict[str, Any]) -> bool:
         """
@@ -63,32 +139,44 @@ class TrivyValidator:
         Returns:
             True if structure is valid
         """
+        self.logger.debug("Checking Trivy structure")
+        
         # Check required root fields
         if not self._check_required_fields(data, self.required_root_fields):
+            self.logger.debug(f"Missing required root fields: {self.required_root_fields}")
             return False
         
         # Check SchemaVersion is reasonable
-        if not isinstance(data.get("SchemaVersion"), int) or data["SchemaVersion"] < 1:
+        schema_version = data.get("SchemaVersion")
+        if not isinstance(schema_version, int) or schema_version < 1:
+            self.logger.debug(f"Invalid SchemaVersion: {schema_version}")
             return False
         
         # Check Results structure if present
         if "Results" in data:
-            if not isinstance(data["Results"], list):
+            results = data["Results"]
+            if not isinstance(results, list):
+                self.logger.debug("Results field is not a list")
                 return False
             
-            for result in data["Results"]:
+            for i, result in enumerate(results):
                 if not isinstance(result, dict):
+                    self.logger.debug(f"Result {i} is not a dictionary")
                     return False
                 
                 # Check vulnerabilities if present
                 if "Vulnerabilities" in result:
-                    if not isinstance(result["Vulnerabilities"], list):
+                    vulnerabilities = result["Vulnerabilities"]
+                    if not isinstance(vulnerabilities, list):
+                        self.logger.debug(f"Vulnerabilities in result {i} is not a list")
                         return False
                     
-                    for vuln in result["Vulnerabilities"]:
+                    for j, vuln in enumerate(vulnerabilities):
                         if not self._check_vulnerability_structure(vuln):
+                            self.logger.debug(f"Vulnerability {j} in result {i} has invalid structure")
                             return False
         
+        self.logger.debug("Trivy structure validation passed")
         return True
     
     def _check_required_fields(self, data: Dict[str, Any], required_fields: list) -> bool:
@@ -115,30 +203,38 @@ class TrivyValidator:
             True if structure is valid
         """
         if not isinstance(vuln, dict):
+            self.logger.debug("Vulnerability is not a dictionary")
             return False
         
         # Check required vulnerability fields
         if not self._check_required_fields(vuln, self.required_vulnerability_fields):
+            missing_fields = [field for field in self.required_vulnerability_fields if field not in vuln]
+            self.logger.debug(f"Vulnerability missing required fields: {missing_fields}")
             return False
         
         # Validate severity if present
         if "Severity" in vuln:
             valid_severities = ["CRITICAL", "HIGH", "MEDIUM", "LOW", "UNKNOWN"]
-            if vuln["Severity"] not in valid_severities:
+            severity = vuln["Severity"]
+            if severity not in valid_severities:
+                self.logger.debug(f"Invalid severity: {severity}, valid options: {valid_severities}")
                 return False
         
         # Validate CVSS structure if present
         if "CVSS" in vuln:
-            if not isinstance(vuln["CVSS"], dict):
+            cvss = vuln["CVSS"]
+            if not isinstance(cvss, dict):
+                self.logger.debug("CVSS field is not a dictionary")
                 return False
             
             # Check CVSS scores are valid floats
-            for source_data in vuln["CVSS"].values():
+            for source_name, source_data in cvss.items():
                 if isinstance(source_data, dict):
                     for score_key in ["V2Score", "V3Score"]:
                         if score_key in source_data:
                             score = source_data[score_key]
                             if not isinstance(score, (int, float)) or not (0 <= score <= 10):
+                                self.logger.debug(f"Invalid CVSS {score_key} in {source_name}: {score}")
                                 return False
         
         return True

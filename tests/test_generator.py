@@ -42,9 +42,10 @@ class TestTrivyDataGenerator(unittest.TestCase):
     
     def test_init(self):
         """Test generator initialization."""
-        generator = TrivyDataGenerator("input.json", "output")
-        self.assertEqual(generator.input_file, "input.json")
-        self.assertEqual(generator.output_dir, Path("output"))
+        with tempfile.NamedTemporaryFile() as temp_file:
+            generator = TrivyDataGenerator(temp_file.name, "output")
+            self.assertEqual(generator.input_file, temp_file.name)
+            self.assertEqual(generator.output_dir, Path("output"))
     
     @patch('src.generator.TrivyDataGenerator._load_template')
     @patch('src.generator.Path.mkdir')
@@ -53,15 +54,16 @@ class TestTrivyDataGenerator(unittest.TestCase):
         mock_load_template.return_value = self.sample_trivy_data
         
         with tempfile.TemporaryDirectory() as temp_dir:
-            generator = TrivyDataGenerator("input.json", temp_dir)
-            
-            with patch.object(generator, '_generate_single_file') as mock_generate:
-                mock_generate.side_effect = [f"{temp_dir}/file_{i}.json" for i in range(3)]
+            with tempfile.NamedTemporaryFile() as temp_input:
+                generator = TrivyDataGenerator(temp_input.name, temp_dir)
                 
-                result = generator.generate_files(3)
-                
-                self.assertEqual(len(result), 3)
-                self.assertEqual(mock_generate.call_count, 3)
+                with patch.object(generator, '_generate_single_file') as mock_generate:
+                    mock_generate.side_effect = [f"{temp_dir}/file_{i}.json" for i in range(3)]
+                    
+                    result = generator.generate_files(3)
+                    
+                    self.assertEqual(len(result), 3)
+                    self.assertEqual(mock_generate.call_count, 3)
     
     def test_load_template_caching(self):
         """Test template caching functionality."""
