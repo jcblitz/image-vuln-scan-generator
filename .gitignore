@@ -174,3 +174,4 @@ generated_files/
 *.temp
 .DS_Store
 Thumbs.db
+test_output/
