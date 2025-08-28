@@ -55,7 +55,8 @@ class TestTrivyDataGenerator(unittest.TestCase):
         
         with tempfile.TemporaryDirectory() as temp_dir:
             with tempfile.NamedTemporaryFile() as temp_input:
-                generator = TrivyDataGenerator(temp_input.name, temp_dir)
+                # Test with optimizations disabled to use the standard path
+                generator = TrivyDataGenerator(temp_input.name, temp_dir, enable_performance_optimizations=False)
                 
                 with patch.object(generator, '_generate_single_file') as mock_generate:
                     mock_generate.side_effect = [f"{temp_dir}/file_{i}.json" for i in range(3)]
@@ -64,6 +65,27 @@ class TestTrivyDataGenerator(unittest.TestCase):
                     
                     self.assertEqual(len(result), 3)
                     self.assertEqual(mock_generate.call_count, 3)
+    
+    @patch('src.generator.TrivyDataGenerator._load_template')
+    @patch('src.generator.Path.mkdir')
+    def test_generate_files_optimized(self, mock_mkdir, mock_load_template):
+        """Test optimized file generation."""
+        mock_load_template.return_value = self.sample_trivy_data
+        
+        with tempfile.TemporaryDirectory() as temp_dir:
+            with tempfile.NamedTemporaryFile() as temp_input:
+                # Test with optimizations enabled (default)
+                generator = TrivyDataGenerator(temp_input.name, temp_dir, enable_performance_optimizations=True)
+                
+                with patch.object(generator, '_generate_single_file_data') as mock_generate_data:
+                    mock_generate_data.side_effect = [
+                        (f"file_{i}.json", self.sample_trivy_data) for i in range(3)
+                    ]
+                    
+                    result = generator.generate_files(3)
+                    
+                    self.assertEqual(len(result), 3)
+                    self.assertEqual(mock_generate_data.call_count, 3)
     
     def test_load_template_caching(self):
         """Test template caching functionality."""

@@ -47,6 +47,7 @@ setup(
     entry_points={
         "console_scripts": [
             "trivy-test-generator=src.main:main",
+            "trivy-benchmark=src.benchmark_cli:main",
         ],
     },
     include_package_data=True,

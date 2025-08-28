@@ -256,3 +256,47 @@ class VulnerabilityRandomizer:
         # Generate date within last 5 years using Faker's date utilities
         random_date = self.fake.date_time_between(start_date='-5y', end_date='now')
         return random_date.strftime("%Y-%m-%dT%H:%M:%SZ")
+    
+    def _randomize_single_vulnerability(self, vuln: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Randomize a single vulnerability object (helper for chunked processing).
+        
+        Args:
+            vuln: Single vulnerability object
+            
+        Returns:
+            Randomized vulnerability object
+        """
+        randomized_vuln = vuln.copy()
+        
+        # Randomize key fields
+        if "VulnerabilityID" in randomized_vuln:
+            randomized_vuln["VulnerabilityID"] = self._generate_cve_id()
+        
+        if "PkgName" in randomized_vuln:
+            randomized_vuln["PkgName"] = self._generate_package_name()
+        
+        if "InstalledVersion" in randomized_vuln:
+            randomized_vuln["InstalledVersion"] = self._generate_version()
+        
+        if "FixedVersion" in randomized_vuln:
+            randomized_vuln["FixedVersion"] = self._generate_version()
+        
+        # Generate severity first so we can correlate CVSS scores
+        severity = None
+        if "Severity" in randomized_vuln:
+            severity = self._generate_severity()
+            randomized_vuln["Severity"] = severity
+        
+        # Randomize CVSS scores with correlation to severity
+        if "CVSS" in randomized_vuln and isinstance(randomized_vuln["CVSS"], dict):
+            self._randomize_cvss_scores(randomized_vuln["CVSS"], severity)
+        
+        # Randomize dates
+        if "PublishedDate" in randomized_vuln:
+            randomized_vuln["PublishedDate"] = self._generate_date()
+        
+        if "LastModifiedDate" in randomized_vuln:
+            randomized_vuln["LastModifiedDate"] = self._generate_date()
+        
+        return randomized_vuln
