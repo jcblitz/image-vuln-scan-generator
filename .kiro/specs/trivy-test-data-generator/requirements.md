@@ -45,7 +45,7 @@ This project creates a Python-based automated solution that generates randomized
 
 #### Acceptance Criteria
 
-1. WHEN randomizing root-level fields THEN the system SHALL modify ArtifactName and ImageID with realistic values
+1. WHEN randomizing root-level fields THEN the system SHALL modify ArtifactName, ImageID, and OwnerEmailAddress with realistic values
 2. WHEN processing vulnerabilities THEN the system SHALL randomize VulnerabilityID using valid CVE format (CVE-YYYY-XXXXX)
 3. WHEN updating package information THEN the system SHALL select PkgName from a predefined list of common Linux packages
 4. WHEN setting versions THEN the system SHALL generate realistic InstalledVersion and FixedVersion strings

@@ -2,6 +2,7 @@
   "SchemaVersion": 2,
   "ArtifactName": "golang:1.12-alpine",
   "ArtifactType": "container_image",
+  "OwnerEmailAddress": "abc@abc.com",
   "Metadata": {
     "OS": {
       "Family": "alpine",

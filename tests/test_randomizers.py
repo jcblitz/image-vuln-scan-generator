@@ -19,7 +19,8 @@ class TestVulnerabilityRandomizer(unittest.TestCase):
             "ArtifactName": "original:latest",
             "Metadata": {
                 "ImageID": "sha256:original123"
-            }
+            },
+            "OwnerEmailAddress": "original@example.com"
         }
         
         self.sample_vulnerabilities = [
@@ -46,11 +47,13 @@ class TestVulnerabilityRandomizer(unittest.TestCase):
         
         # Should change values but keep structure
         self.assertNotEqual(result["ArtifactName"], self.sample_data["ArtifactName"])
+        self.assertNotEqual(result["OwnerEmailAddress"], self.sample_data["OwnerEmailAddress"])
         # ImageID should be a valid SHA256 format
         self.assertTrue(result["Metadata"]["ImageID"].startswith("sha256:"))
         self.assertEqual(len(result["Metadata"]["ImageID"]), 71)  # "sha256:" + 64 hex chars
         self.assertIn("ArtifactName", result)
         self.assertIn("ImageID", result["Metadata"])
+        self.assertIn("OwnerEmailAddress", result)
     
     def test_generate_cve_id(self):
         """Test CVE ID generation."""
@@ -323,6 +326,79 @@ class TestVulnerabilityRandomizer(unittest.TestCase):
             self.assertEqual(len(hex_part), 64)
             # Should be valid hex
             self.assertTrue(all(c in '0123456789abcdef' for c in hex_part))
+    
+    def test_generate_email_address(self):
+        """Test email address generation."""
+        email = self.randomizer._generate_email_address()
+        
+        self.assertIsInstance(email, str)
+        self.assertIn('@', email)
+        self.assertGreater(len(email), 0)
+        
+        # Should have basic email format
+        parts = email.split('@')
+        self.assertEqual(len(parts), 2)
+        self.assertGreater(len(parts[0]), 0)  # Username part
+        self.assertGreater(len(parts[1]), 0)  # Domain part
+        self.assertIn('.', parts[1])  # Domain should have TLD
+    
+    def test_generate_email_address_uniqueness(self):
+        """Test that generated email addresses are unique."""
+        emails = [self.randomizer._generate_email_address() for _ in range(50)]
+        
+        # Should have high uniqueness (very high probability with Faker)
+        unique_emails = set(emails)
+        self.assertGreater(len(unique_emails), 40)  # Allow for small chance of duplicates
+    
+    def test_generate_email_address_realistic_format(self):
+        """Test that generated email addresses follow realistic patterns."""
+        emails = [self.randomizer._generate_email_address() for _ in range(20)]
+        
+        for email in emails:
+            # Should be valid email format
+            self.assertRegex(email, r'^[^@]+@[^@]+\.[^@]+$')
+            
+            # Should not have consecutive dots or start/end with dots
+            self.assertNotIn('..', email)
+            self.assertFalse(email.startswith('.'))
+            self.assertFalse(email.endswith('.'))
+    
+    def test_randomize_root_fields_with_owner_email(self):
+        """Test root field randomization specifically for OwnerEmailAddress."""
+        data_with_email = {
+            "ArtifactName": "test:latest",
+            "OwnerEmailAddress": "test@example.com",
+            "Metadata": {
+                "ImageID": "sha256:test123"
+            }
+        }
+        
+        result = self.randomizer.randomize_root_fields(data_with_email.copy())
+        
+        # OwnerEmailAddress should be changed
+        self.assertNotEqual(result["OwnerEmailAddress"], data_with_email["OwnerEmailAddress"])
+        
+        # Should still be a valid email format
+        self.assertIn('@', result["OwnerEmailAddress"])
+        self.assertRegex(result["OwnerEmailAddress"], r'^[^@]+@[^@]+\.[^@]+$')
+    
+    def test_randomize_root_fields_without_owner_email(self):
+        """Test root field randomization when OwnerEmailAddress is not present."""
+        data_without_email = {
+            "ArtifactName": "test:latest",
+            "Metadata": {
+                "ImageID": "sha256:test123"
+            }
+        }
+        
+        result = self.randomizer.randomize_root_fields(data_without_email.copy())
+        
+        # Should not add OwnerEmailAddress if it wasn't there originally
+        self.assertNotIn("OwnerEmailAddress", result)
+        
+        # Other fields should still be randomized (check format rather than exact value)
+        self.assertIn(':', result["ArtifactName"])  # Should have artifact:version format
+        self.assertTrue(result["Metadata"]["ImageID"].startswith("sha256:"))  # Should be valid SHA format
 
 
     def test_randomize_vulnerability_count_empty_list(self):

@@ -68,7 +68,7 @@ class TrivyDataGenerator:
 ```python
 class VulnerabilityRandomizer:
     def randomize_root_fields(self, data: Dict[str, Any]) -> Dict[str, Any]:
-        """Randomize ArtifactName and ImageID"""
+        """Randomize ArtifactName, ImageID, and OwnerEmailAddress"""
     
     def randomize_vulnerabilities(self, vulnerabilities: List[Dict]) -> List[Dict]:
         """Randomize vulnerability array entries and count"""
@@ -93,6 +93,9 @@ class VulnerabilityRandomizer:
     
     def _generate_date(self) -> str:
         """Generate random date in ISO format"""
+    
+    def _generate_email_address(self) -> str:
+        """Generate realistic email address for OwnerEmailAddress field"""
 ```
 
 ### 4. Validation Module (validators.py)
@@ -166,7 +169,7 @@ Based on typical Trivy output format:
 
 ### Randomization Targets
 Fields to be randomized while preserving structure:
-- **Root Level**: ArtifactName, Metadata.ImageID
+- **Root Level**: ArtifactName, Metadata.ImageID, OwnerEmailAddress
 - **Vulnerability Count**: Number of vulnerabilities in the array (0-20 range)
 - **Vulnerabilities**: VulnerabilityID, PkgName, InstalledVersion, FixedVersion, Severity, CVSS scores, dates
 

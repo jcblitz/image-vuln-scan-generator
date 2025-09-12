@@ -34,7 +34,7 @@ class VulnerabilityRandomizer:
     
     def randomize_root_fields(self, data: Dict[str, Any]) -> Dict[str, Any]:
         """
-        Randomize ArtifactName and ImageID fields.
+        Randomize ArtifactName, ImageID, and OwnerEmailAddress fields.
         
         Args:
             data: Original JSON data
@@ -50,6 +50,10 @@ class VulnerabilityRandomizer:
         if "Metadata" in data and isinstance(data["Metadata"], dict):
             if "ImageID" in data["Metadata"]:
                 data["Metadata"]["ImageID"] = self._generate_image_id()
+        
+        # Randomize OwnerEmailAddress
+        if "OwnerEmailAddress" in data:
+            data["OwnerEmailAddress"] = self._generate_email_address()
         
         return data
     
@@ -113,6 +117,10 @@ class VulnerabilityRandomizer:
     def _generate_image_id(self) -> str:
         """Generate realistic Docker image ID."""
         return f"sha256:{self.fake.sha256()}"
+    
+    def _generate_email_address(self) -> str:
+        """Generate realistic email address for OwnerEmailAddress field."""
+        return self.fake.email()
     
     def _generate_cve_id(self) -> str:
         """Generate realistic CVE identifier following CVE-YYYY-XXXXX format."""
