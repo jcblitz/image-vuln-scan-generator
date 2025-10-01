@@ -70,26 +70,26 @@
   - Validate matches array structure and required fields
   - _Requirements: 3.1, 3.2, 3.4_
 
-- [ ] 3. Update CLI interface for multi-format support
+- [x] 3. Update CLI interface for multi-format support
   - Modify main.py to support format detection and selection
   - Add factory method for creating format-specific generators
   - Implement auto-detection of scanner format from input files
   - Update command-line arguments to support format specification
   - _Requirements: 6.1, 6.2, 6.5_
 
-- [ ] 3.1 Implement format detection logic
+- [x] 3.1 Implement format detection logic
   - Create function to auto-detect Trivy vs Grype format from JSON structure
   - Add fallback to manual format specification via CLI argument
   - Implement error handling for unrecognized formats
   - _Requirements: 6.4_
 
-- [ ] 3.2 Create generator factory method
+- [x] 3.2 Create generator factory method
   - Implement factory pattern to instantiate appropriate generator class
   - Add support for both Trivy and Grype generator creation
   - Include error handling for unsupported formats
   - _Requirements: 6.1_
 
-- [ ] 3.3 Update CLI argument parsing
+- [x] 3.3 Update CLI argument parsing
   - Add optional --format argument for manual format specification
   - Maintain backward compatibility with existing Trivy usage
   - Update help text and usage instructions

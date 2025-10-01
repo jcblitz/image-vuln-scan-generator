@@ -317,7 +317,8 @@ class GrypeRandomizer(BaseRandomizer):
             }]
         
         return fix_info 
-   def randomize_related_vulnerabilities(self, related: List[Dict]) -> List[Dict]:
+    
+    def randomize_related_vulnerabilities(self, related: List[Dict]) -> List[Dict]:
         """
         Randomize related vulnerabilities array (0-5 per match).
         
@@ -582,7 +583,8 @@ class GrypeRandomizer(BaseRandomizer):
             base_description += " " + self.select_random_from_list(severity_context)
         
         return base_description    
-def randomize_artifact(self, artifact: Dict[str, Any]) -> Dict[str, Any]:
+    
+    def randomize_artifact(self, artifact: Dict[str, Any]) -> Dict[str, Any]:
         """
         Randomize artifact information including PURL generation.
         

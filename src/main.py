@@ -1,28 +1,110 @@
 """
-Main CLI entry point for the Trivy Test Data Generator.
+Main CLI entry point for the Vulnerability Test Data Generator.
+Supports both Trivy and Grype formats with auto-detection.
 """
 
 import argparse
+import json
 import sys
 from pathlib import Path
 from typing import Optional
 
 from .exceptions import TrivyGeneratorError, ValidationError, GenerationError, FileOperationError, ConfigurationError
 from .generator import TrivyDataGenerator
+from .grype.generator import GrypeDataGenerator
 from .logging_config import setup_logging, get_logger, log_exception
 from .validators import TrivyValidator
+
+
+def detect_format(file_path: str) -> str:
+    """
+    Auto-detect scanner format from JSON structure.
+    
+    Args:
+        file_path: Path to the input JSON file
+        
+    Returns:
+        Format type: 'trivy' or 'grype'
+        
+    Raises:
+        ValidationError: If format cannot be determined or file is invalid
+        FileOperationError: If file cannot be read
+    """
+    logger = get_logger(__name__)
+    logger.debug(f"Detecting format for file: {file_path}")
+    
+    try:
+        with open(file_path, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+    except FileNotFoundError:
+        raise FileOperationError(
+            "Input file not found",
+            file_path=file_path,
+            operation="format detection"
+        )
+    except json.JSONDecodeError as e:
+        raise ValidationError(
+            "Invalid JSON in input file",
+            file_path=file_path,
+            details=f"JSON parsing failed: {e}"
+        )
+    except IOError as e:
+        raise FileOperationError(
+            "Failed to read input file",
+            file_path=file_path,
+            operation="format detection",
+            details=str(e)
+        )
+    
+    # Check for Grype format indicators
+    if "matches" in data and isinstance(data["matches"], list):
+        # Additional Grype-specific checks
+        if data["matches"]:  # If matches array is not empty
+            first_match = data["matches"][0]
+            if ("vulnerability" in first_match and 
+                "artifact" in first_match and 
+                "matchDetails" in first_match):
+                logger.info("Detected Grype format")
+                return "grype"
+    
+    # Check for Trivy format indicators
+    if "Results" in data and isinstance(data["Results"], list):
+        # Additional Trivy-specific checks
+        if data["Results"]:  # If Results array is not empty
+            first_result = data["Results"][0]
+            if "Vulnerabilities" in first_result:
+                logger.info("Detected Trivy format")
+                return "trivy"
+    
+    # If we have an empty matches array, assume Grype
+    if "matches" in data and isinstance(data["matches"], list):
+        logger.info("Detected Grype format (empty matches)")
+        return "grype"
+    
+    # If we have an empty Results array, assume Trivy
+    if "Results" in data and isinstance(data["Results"], list):
+        logger.info("Detected Trivy format (empty results)")
+        return "trivy"
+    
+    # If neither format is clearly detected, raise an error
+    logger.error(f"Unable to determine format for file: {file_path}")
+    raise ValidationError(
+        "Unable to determine scanner format",
+        file_path=file_path,
+        details="File does not match Trivy or Grype JSON structure"
+    )
 
 
 def parse_arguments() -> argparse.Namespace:
     """Parse command line arguments."""
     parser = argparse.ArgumentParser(
-        description="Generate randomized test data from Trivy JSON vulnerability reports"
+        description="Generate randomized test data from Trivy or Grype JSON vulnerability reports"
     )
     
     parser.add_argument(
         "input_file",
         type=str,
-        help="Path to the input Trivy JSON file"
+        help="Path to the input JSON file (Trivy or Grype format)"
     )
     
     parser.add_argument(
@@ -37,6 +119,13 @@ def parse_arguments() -> argparse.Namespace:
         type=str,
         default="output",
         help="Output directory for generated files (default: output)"
+    )
+    
+    parser.add_argument(
+        "-f", "--format",
+        type=str,
+        choices=["trivy", "grype"],
+        help="Manually specify scanner format (auto-detected if not provided)"
     )
     
     parser.add_argument(
@@ -58,6 +147,38 @@ def parse_arguments() -> argparse.Namespace:
     )
     
     return parser.parse_args()
+
+
+def create_generator(format_type: str, input_file: str, output_dir: str):
+    """
+    Factory method to create format-specific generator.
+    
+    Args:
+        format_type: Scanner format ('trivy' or 'grype')
+        input_file: Path to input JSON file
+        output_dir: Output directory for generated files
+        
+    Returns:
+        Format-specific generator instance
+        
+    Raises:
+        ConfigurationError: If format is unsupported
+    """
+    logger = get_logger(__name__)
+    logger.debug(f"Creating generator for format: {format_type}")
+    
+    if format_type == "trivy":
+        logger.info("Creating Trivy generator")
+        return TrivyDataGenerator(input_file, output_dir)
+    elif format_type == "grype":
+        logger.info("Creating Grype generator")
+        return GrypeDataGenerator(input_file, output_dir)
+    else:
+        raise ConfigurationError(
+            f"Unsupported scanner format: {format_type}",
+            parameter="format",
+            details=f"Supported formats: trivy, grype"
+        )
 
 
 def validate_inputs(args: argparse.Namespace, logger) -> None:
@@ -117,28 +238,31 @@ def main() -> int:
             enable_console=True
         )
         
-        logger.info("Starting Trivy Test Data Generator")
-        logger.debug(f"Arguments: input_file={args.input_file}, count={args.count}, output_dir={args.output_dir}")
+        logger.info("Starting Vulnerability Test Data Generator")
+        logger.debug(f"Arguments: input_file={args.input_file}, count={args.count}, output_dir={args.output_dir}, format={args.format}")
         
         # Validate input parameters
         validate_inputs(args, logger)
         
-        # Validate input file is valid Trivy JSON
-        logger.info("Validating input file")
-        validator = TrivyValidator()
-        validator.validate_input_file(args.input_file)
+        # Determine format (auto-detect or use specified)
+        if args.format:
+            format_type = args.format
+            logger.info(f"Using manually specified format: {format_type}")
+        else:
+            logger.info("Auto-detecting scanner format...")
+            format_type = detect_format(args.input_file)
         
-        # Initialize generator
-        logger.info("Initializing generator")
-        generator = TrivyDataGenerator(args.input_file, args.output_dir)
+        # Create format-specific generator
+        logger.info(f"Creating {format_type} generator")
+        generator = create_generator(format_type, args.input_file, args.output_dir)
         
         # Generate files
-        logger.info(f"Generating {args.count} randomized files...")
-        print(f"Generating {args.count} randomized files...")
+        logger.info(f"Generating {args.count} randomized {format_type} files...")
+        print(f"Generating {args.count} randomized {format_type} files...")
         
         generated_files = generator.generate_files(args.count)
         
-        success_msg = f"Successfully generated {len(generated_files)} files in '{args.output_dir}'"
+        success_msg = f"Successfully generated {len(generated_files)} {format_type} files in '{args.output_dir}'"
         logger.info(success_msg)
         print(success_msg)
         return 0
