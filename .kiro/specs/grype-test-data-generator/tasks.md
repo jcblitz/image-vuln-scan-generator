@@ -32,38 +32,38 @@
   - Ensure backward compatibility with existing functionality
   - _Requirements: 7.3_
 
-- [ ] 2. Implement Grype-specific generator components
+- [x] 2. Implement Grype-specific generator components
   - Create GrypeDataGenerator extending BaseGenerator
   - Implement Grype-specific randomization logic for matches-based schema
   - Add Grype schema validation with PURL format checking
   - _Requirements: 1.1, 1.2, 1.3_
 
-- [ ] 2.1 Create GrypeDataGenerator class
+- [x] 2.1 Create GrypeDataGenerator class
   - Implement Grype-specific data randomization method
   - Add Grype input validation and output filename generation
   - Integrate with GrypeRandomizer and GrypeValidator
   - _Requirements: 1.1, 3.1_
 
-- [ ] 2.2 Implement GrypeRandomizer for matches-based schema
+- [x] 2.2 Implement GrypeRandomizer for matches-based schema
   - Create methods to randomize matches array and vulnerability count (1-50)
   - Implement vulnerability object randomization with CVE IDs and severity
   - Add CVSS metrics and EPSS data generation
   - Generate realistic fix information with versions and states
   - _Requirements: 4.1, 4.2, 4.3, 4.4_
 
-- [ ] 2.3 Add related vulnerabilities and match details randomization
+- [x] 2.3 Add related vulnerabilities and match details randomization
   - Implement randomization of related vulnerabilities array (0-5 per match)
   - Create match details randomization with matcher types and search criteria
   - Add distro information and version constraint generation
   - _Requirements: 5.1, 5.2, 5.3_
 
-- [ ] 2.4 Implement artifact randomization
+- [x] 2.4 Implement artifact randomization
   - Create artifact information randomization (id, name, version)
   - Generate valid Package URL (PURL) format strings
   - Add location and metadata randomization
   - _Requirements: 4.8, 5.4_
 
-- [ ] 2.5 Create GrypeValidator for schema validation
+- [x] 2.5 Create GrypeValidator for schema validation
   - Implement Grype-specific schema validation
   - Add PURL format validation
   - Create CVSS structure validation
