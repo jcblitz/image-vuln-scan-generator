@@ -1,18 +1,25 @@
-# Trivy Test Data Generator
+# Vulnerability Test Data Generator
 
-A Python tool for generating randomized, synthetic test data based on Trivy JSON vulnerability reports.
+A Python tool for generating randomized, synthetic test data based on vulnerability scanner JSON reports. Supports both **Trivy** and **Grype** formats with automatic format detection.
 
 ## Overview
 
-The Trivy Test Data Generator helps developers and QA engineers create diverse test datasets for security scan data ingestion systems. It takes a single Trivy JSON vulnerability report as input and generates multiple randomized versions while maintaining the original JSON schema structure.
+The Vulnerability Test Data Generator helps developers and QA engineers create diverse test datasets for security scan data ingestion systems. It takes a single vulnerability scanner JSON report as input and generates multiple randomized versions while maintaining the original JSON schema structure.
+
+### Supported Formats
+- **Trivy**: Container and filesystem vulnerability scanner
+- **Grype**: Container vulnerability scanner by Anchore
 
 ## Features
 
-- **Schema Preservation**: Maintains the exact JSON structure of the original Trivy report
+- **Multi-Format Support**: Supports both Trivy and Grype JSON formats with automatic detection
+- **Schema Preservation**: Maintains the exact JSON structure of the original vulnerability report
 - **Realistic Randomization**: Generates realistic vulnerability data including CVE IDs, package names, versions, and CVSS scores
-- **Configurable Output**: Specify the number of files to generate
+- **Configurable Output**: Specify the number of files to generate (1-10,000+)
 - **Performance Optimized**: Can generate 1,000 files in under 30 seconds
-- **Extensible Architecture**: Modular design allows for easy extension to other scanner formats
+- **Extensible Architecture**: Modular design with base classes for easy extension to other scanner formats
+- **Comprehensive Testing**: Full test suite with unit, integration, and performance tests
+- **Robust Error Handling**: Detailed error messages and logging for troubleshooting
 
 ## Installation
 
@@ -20,7 +27,7 @@ The Trivy Test Data Generator helps developers and QA engineers create diverse t
 
 ```bash
 git clone <repository-url>
-cd trivy-test-data-generator
+cd vulnerability-test-data-generator
 pip install -r requirements.txt
 pip install -e .
 ```
@@ -28,65 +35,156 @@ pip install -e .
 ### Using pip (when published)
 
 ```bash
-pip install trivy-test-data-generator
+pip install vulnerability-test-data-generator
 ```
 
-### Python command line
+### Direct Python Execution
 ```bash
-python -m src.main
+python -m src.main input.json
 ```
 ## Usage
 
 ### Command Line Interface
 
 ```bash
-# Generate 10 randomized files (default)
-trivy-test-generator input.json
+# Generate 10 randomized files (default) - auto-detects format
+python -m src.main input.json
 
 # Generate 100 randomized files
-trivy-test-generator input.json -c 100
+python -m src.main input.json -c 100
 
 # Specify output directory
-trivy-test-generator input.json -c 50 -o /path/to/output
+python -m src.main input.json -c 50 -o /path/to/output
+
+# Manually specify format (Trivy or Grype)
+python -m src.main input.json -f trivy -c 25
+python -m src.main grype-report.json -f grype -c 25
+
+# Enable verbose logging
+python -m src.main input.json -v
+
+# Enable debug logging with log file
+python -m src.main input.json --debug --log-file generator.log
 
 # Show help
-trivy-test-generator --help
+python -m src.main --help
 ```
 
 ### Python API
 
 ```python
-from src.generator import TrivyDataGenerator
+# Trivy format
+from src.trivy.generator import TrivyDataGenerator
 
-# Initialize generator
-generator = TrivyDataGenerator("input.json", "output_directory")
-
-# Generate 25 randomized files
+generator = TrivyDataGenerator("trivy-report.json", "output_directory")
 generated_files = generator.generate_files(25)
+print(f"Generated {len(generated_files)} Trivy files")
 
-print(f"Generated {len(generated_files)} files")
+# Grype format
+from src.grype.generator import GrypeDataGenerator
+
+generator = GrypeDataGenerator("grype-report.json", "output_directory")
+generated_files = generator.generate_files(25)
+print(f"Generated {len(generated_files)} Grype files")
+
+# Auto-detection using main module
+from src.main import detect_format, create_generator
+
+format_type = detect_format("input.json")
+generator = create_generator(format_type, "input.json", "output_directory")
+generated_files = generator.generate_files(25)
+```
+
+## Examples
+
+### Basic Usage
+```bash
+# Generate 10 files from a Trivy report (auto-detected)
+python -m src.main trivy-report.json
+
+# Generate 50 files from a Grype report (auto-detected)  
+python -m src.main grype-report.json -c 50
+
+# Output files will be in ./output/ directory by default
+```
+
+### Advanced Usage
+```bash
+# Generate 100 files with custom output directory and logging
+python -m src.main input.json -c 100 -o /tmp/test-data --verbose
+
+# Force Grype format with debug logging
+python -m src.main input.json -f grype -c 25 --debug --log-file debug.log
+```
+
+### Sample Output
+```
+$ python -m src.main tests/fixtures/grype-golang-1.12-alpine.json -c 5 -v
+
+Generating 5 randomized grype files...
+Successfully generated 5 grype files in 'output'
+
+$ ls output/
+grype-generated-0000.json  grype-generated-0002.json  grype-generated-0004.json
+grype-generated-0001.json  grype-generated-0003.json
 ```
 
 ## Randomized Fields
 
-The tool randomizes the following fields while preserving the JSON schema:
+The tool randomizes different fields based on the scanner format while preserving the JSON schema:
 
-### Root Level Fields
+### Trivy Format
+**Root Level Fields:**
 - `ArtifactName`: Container image names with realistic tags
 - `Metadata.ImageID`: Docker image SHA256 hashes
 
-### Vulnerability Fields
+**Vulnerability Fields:**
 - `VulnerabilityID`: CVE identifiers in CVE-YYYY-XXXXX format
 - `PkgName`: Package names from a curated list of common Linux packages
 - `InstalledVersion` / `FixedVersion`: Realistic version strings
-- `Severity`: Weighted distribution of severity levels
+- `Severity`: Weighted distribution of severity levels (CRITICAL, HIGH, MEDIUM, LOW, UNKNOWN)
 - `CVSS.V2Score` / `CVSS.V3Score`: Realistic CVSS scores (0.0-10.0)
 - `PublishedDate` / `LastModifiedDate`: Random dates within the last 5 years
+
+### Grype Format
+**Match Fields:**
+- `matches`: Array with 1-50 randomized vulnerability matches
+- `vulnerability.id`: CVE identifiers in CVE-YYYY-XXXXX format
+- `vulnerability.severity`: Grype severity levels (Critical, High, Medium, Low, Negligible, Unknown)
+- `vulnerability.cvss`: CVSS metrics with realistic scores and vectors
+- `vulnerability.epss`: EPSS scores and percentiles (0.0-1.0)
+
+**Artifact Fields:**
+- `artifact.name`: Package names from curated lists
+- `artifact.version`: Realistic version strings
+- `artifact.purl`: Valid Package URL (PURL) format strings
+- `artifact.locations`: File system paths and layer IDs
+
+**Related Vulnerabilities:**
+- `relatedVulnerabilities`: 0-5 related CVEs per match
+- `matchDetails`: Matcher types and search criteria
+
+## Format Detection
+
+The tool automatically detects the scanner format by analyzing the JSON structure:
+
+- **Grype**: Detected by presence of `matches` array with `vulnerability`, `artifact`, and `matchDetails` fields
+- **Trivy**: Detected by presence of `Results` array with `Vulnerabilities` field
+
+You can also manually specify the format using the `-f/--format` flag if auto-detection fails.
+
+## Performance
+
+- **Generation Speed**: ~27 files per second on standard hardware
+- **Memory Efficient**: Processes large JSON files without excessive memory usage
+- **Scalable**: Can generate 1,000+ files in under 40 seconds
+- **Concurrent Safe**: Thread-safe design for potential future parallelization
 
 ## Requirements
 
 - Python 3.8+
 - Faker library for realistic data generation
+- Standard library modules: json, pathlib, argparse, logging, time
 
 ## Development
 
@@ -95,7 +193,7 @@ The tool randomizes the following fields while preserving the JSON schema:
 ```bash
 # Clone repository
 git clone <repository-url>
-cd trivy-test-data-generator
+cd vulnerability-test-data-generator
 
 # Install in development mode
 pip install -e ".[dev]"
@@ -113,8 +211,13 @@ python -m pytest
 # Run with coverage
 python -m pytest --cov=src
 
-# Run specific test file
-python -m pytest tests/test_generator.py
+# Run specific test files
+python -m pytest tests/test_trivy_* -v    # Trivy tests
+python -m pytest tests/test_grype_* -v    # Grype tests
+python -m pytest tests/test_integration.py -v  # Integration tests
+
+# Run performance tests
+python -m pytest tests/test_performance.py -v
 ```
 
 ### Code Quality
@@ -133,23 +236,65 @@ mypy src/
 ## Project Structure
 
 ```
-trivy-test-generator/
+vulnerability-test-data-generator/
 ├── src/
 │   ├── __init__.py
-│   ├── main.py              # CLI entry point
-│   ├── generator.py         # Core generation logic
-│   ├── randomizers.py       # Field randomization functions
-│   ├── validators.py        # JSON schema validation
-│   └── utils.py            # Utility functions
+│   ├── main.py              # CLI entry point with auto-detection
+│   ├── exceptions.py        # Custom exception classes
+│   ├── logging_config.py    # Logging configuration
+│   ├── performance.py       # Performance monitoring
+│   ├── base/                # Abstract base classes
+│   │   ├── generator.py     # Base generator template
+│   │   ├── randomizer.py    # Base randomization utilities
+│   │   └── validator.py     # Base validation interface
+│   ├── trivy/               # Trivy-specific implementation
+│   │   ├── generator.py     # Trivy data generator
+│   │   ├── randomizers.py   # Trivy field randomization
+│   │   └── validators.py    # Trivy schema validation
+│   └── grype/               # Grype-specific implementation
+│       ├── generator.py     # Grype data generator
+│       ├── randomizers.py   # Grype field randomization
+│       └── validators.py    # Grype schema validation
 ├── tests/
 │   ├── __init__.py
-│   ├── test_generator.py
-│   ├── test_randomizers.py
+│   ├── test_trivy_*         # Trivy format tests
+│   ├── test_grype_*         # Grype format tests
+│   ├── test_integration.py  # End-to-end integration tests
+│   ├── test_performance.py  # Performance benchmarks
 │   └── fixtures/
-│       └── sample_trivy.json
+│       ├── sample_trivy.json
+│       └── grype-golang-1.12-alpine.json
 ├── requirements.txt
 ├── setup.py
 └── README.md
+```
+
+## Troubleshooting
+
+### Common Issues
+
+**Format Detection Fails**
+```bash
+# Manually specify the format
+python -m src.main input.json -f trivy  # or -f grype
+```
+
+**Large File Generation**
+```bash
+# Use verbose logging to monitor progress
+python -m src.main input.json -c 1000 -v
+```
+
+**Permission Errors**
+```bash
+# Ensure output directory is writable
+python -m src.main input.json -o /tmp/output
+```
+
+### Debug Mode
+```bash
+# Enable debug logging for detailed troubleshooting
+python -m src.main input.json --debug --log-file debug.log
 ```
 
 ## Contributing
@@ -157,11 +302,12 @@ trivy-test-generator/
 1. Fork the repository
 2. Create a feature branch (`git checkout -b feature/amazing-feature`)
 3. Make your changes
-4. Add tests for new functionality
+4. Add tests for new functionality (both unit and integration tests)
 5. Ensure all tests pass (`python -m pytest`)
-6. Commit your changes (`git commit -m 'Add amazing feature'`)
-7. Push to the branch (`git push origin feature/amazing-feature`)
-8. Open a Pull Request
+6. Test with both Trivy and Grype sample files
+7. Commit your changes (`git commit -m 'Add amazing feature'`)
+8. Push to the branch (`git push origin feature/amazing-feature`)
+9. Open a Pull Request
 
 ## License
 
