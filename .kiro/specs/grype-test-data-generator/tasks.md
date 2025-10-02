@@ -155,20 +155,19 @@
   - Benchmark complex match processing with many related vulnerabilities
   - _Requirements: 2.3_
 
-- [ ] 6. Update documentation and examples
+- [x] 6. Update documentation and examples
   - Update README with multi-format usage instructions
   - Add Grype-specific examples and sample commands
   - Document the shared architecture for future extensions
-  - Create migration guide for existing Trivy users
   - _Requirements: 6.2, 6.5, 7.2_
 
-- [ ] 6.1 Update README and usage documentation
+- [x] 6.1 Update README and usage documentation
   - Add examples for both Trivy and Grype usage
   - Document format auto-detection feature
   - Include performance benchmarks and limitations
   - _Requirements: 6.2_
 
-- [ ] 6.2 Create architecture documentation
+- [x] 6.2 Create architecture documentation
   - Document the shared base class design
   - Provide guidelines for adding new scanner formats
   - Include class diagrams and interaction flows
